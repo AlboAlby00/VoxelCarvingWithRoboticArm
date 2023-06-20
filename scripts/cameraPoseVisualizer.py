@@ -22,7 +22,7 @@ class CameraPoseShower:
         self.tz = 0.0
 
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('voxel_carving')+"/data/red_block.csv"
+        file_path = rospack.get_path('voxel_carving')+"/data/around_X.csv"
         with open(file_path, mode='r') as csv_file:
             reader = csv.reader(csv_file)
             header = next(reader)
@@ -60,7 +60,7 @@ class CameraPoseShower:
         self.poses.append(T)
         """
         visualizer = o3d.visualization.Visualizer()
-        for pose in self.poses[:5]:
+        for pose in self.poses:
             print(pose)
             visualizer.create_window(window_name="Camera Pose", width=800, height=600)
             camera_geometry = self.get_camera_geometry(pose)

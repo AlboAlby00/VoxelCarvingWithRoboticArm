@@ -8,6 +8,7 @@ import os
 from PIL import Image
 from base64 import decodestring
 
+
 # width of image 1280
 # height of image 720
 
@@ -36,8 +37,10 @@ class ImageSaver:
         # obtain first camera pose
         print(type(req.data))
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('voxel_carving')+"/data/"+req.file+".csv"
+        file_path = rospack.get_path('voxel_carving')+"/data/"+req.file+".txt"
         image_directory_path = rospack.get_path('voxel_carving')+"/images/"
+        
+
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             # File is not existent or empty
             with open(file_path, mode='w') as xml_file:
@@ -46,14 +49,17 @@ class ImageSaver:
                 #csv_writer = csv.writer(csv_file)
                 self.first_camera_pose[str(req.file)] = np.reshape(req.transform, (4, 4), order='F')
                 #csv_writer.writerow(self.header)
+
         else:
             # File is not empty
-            with open(file_path, mode='r') as csv_file:
+            with open(file_path, mode='r') as file:
                 print("file not empty")
-                #csv_reader = csv.reader(csv_file)
-                #row_count = sum(1 for row in csv_reader)
+                row_count=1
+                for line in file.readlines():
+                    row_count+=1
 
-        with open(file_path, mode='a') as csv_file:
+
+        with open(file_path, mode='a') as file:
             #csv_writer = csv.writer(csv_file)
             # calculate camera pose relativo to first camera pose
             absolute_pose = np.reshape(req.transform, (4 , 4), order='F')
@@ -78,7 +84,8 @@ class ImageSaver:
             image = Image.frombytes("RGB", (1280, 720), self.current_image["data"])
             image.save(path_of_image, "PNG")
             # write to csv file path of image and relative pose
-            csv_writer.writerow([path_of_image,relative_pose.flatten()])
+            #csv_writer.writerow([path_of_image,relative_pose.flatten()])
+            file.write(str(list(relative_pose.flatten()))+"\n")
         
         return ImageDataResponse()
 
