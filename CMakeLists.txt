@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   red_msgs
   rospy
   std_msgs
+  sensor_msgs
 )
 
 

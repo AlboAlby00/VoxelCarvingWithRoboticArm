@@ -1,4 +1,5 @@
 from red_msgs.srv import ImageData, ImageDataResponse
+from sensor_msgs.msg import Image as Sensor_Image
 import rospy
 import csv
 import numpy as np
@@ -13,11 +14,22 @@ from base64 import decodestring
 class ImageSaver:
 
     def __init__(self) -> None:
+
         self.get_state_server = rospy.Service(
             '/voxel_carving/save_image', ImageData, self.callback_save_image)
+        self.camera_subscriber = rospy.Subscriber(
+            "/camera/color/image_raw", Sensor_Image, self.callback_new_image_from_camera)
+
         self.images = []
         self.header = ["data","pose"]
         self.first_camera_pose = {}
+        self.current_image = {}
+
+    def callback_new_image_from_camera(self, msg):
+            self.current_image["data"] = msg.data
+            self.current_image["encoding"] = msg.encoding
+            self.current_image["height"] = msg.height
+            self.current_image["width"] = msg.width
         
         
     def callback_save_image(self,req):
@@ -28,21 +40,21 @@ class ImageSaver:
         image_directory_path = rospack.get_path('voxel_carving')+"/images/"
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             # File is not existent or empty
-            with open(file_path, mode='w') as csv_file:
+            with open(file_path, mode='w') as xml_file:
                 print("file empty")
                 row_count=1
-                csv_writer = csv.writer(csv_file)
+                #csv_writer = csv.writer(csv_file)
                 self.first_camera_pose[str(req.file)] = np.reshape(req.transform, (4, 4), order='F')
-                csv_writer.writerow(self.header)
+                #csv_writer.writerow(self.header)
         else:
             # File is not empty
             with open(file_path, mode='r') as csv_file:
                 print("file not empty")
-                csv_reader = csv.reader(csv_file)
-                row_count = sum(1 for row in csv_reader)
+                #csv_reader = csv.reader(csv_file)
+                #row_count = sum(1 for row in csv_reader)
 
         with open(file_path, mode='a') as csv_file:
-            csv_writer = csv.writer(csv_file)
+            #csv_writer = csv.writer(csv_file)
             # calculate camera pose relativo to first camera pose
             absolute_pose = np.reshape(req.transform, (4 , 4), order='F')
             first_camera_pose = self.first_camera_pose[str(req.file)]
@@ -62,7 +74,8 @@ class ImageSaver:
             if not os.path.exists(directory):
                 os.makedirs(directory)
             path_of_image = directory+f"/image{row_count}"
-            image = Image.frombytes("RGB", (1280, 720), req.data)
+            #image = Image.frombytes("RGB", (1280, 720), req.data)
+            image = Image.frombytes("RGB", (1280, 720), self.current_image["data"])
             image.save(path_of_image, "PNG")
             # write to csv file path of image and relative pose
             csv_writer.writerow([path_of_image,relative_pose.flatten()])
