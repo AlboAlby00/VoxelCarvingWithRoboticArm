@@ -7,6 +7,7 @@ import rospkg
 import os
 from PIL import Image
 from base64 import decodestring
+from scipy.spatial.transform import Rotation as R
 
 
 # width of image 1280
@@ -62,19 +63,21 @@ class ImageSaver:
         with open(file_path, mode='a') as file:
             #csv_writer = csv.writer(csv_file)
             # calculate camera pose relativo to first camera pose
-            absolute_pose = np.reshape(req.transform, (4 , 4), order='F')
-            first_camera_pose = self.first_camera_pose[str(req.file)]
-            relative_R = first_camera_pose[:3,:3].T @ absolute_pose[:3,:3]
-            relative_t = absolute_pose[:3,3] - first_camera_pose[:3,3]
+
+            end_effector_to_camera = np.array([[1, 0, 0, 0.307, 0, 1, 0, 0, 0, 0, 1, 0.487, 0, 0, 0, 1]]).reshape(4,4)
+            end_effector_pose = np.reshape(req.transform, (4 , 4), order='F')
+            camera_pose = end_effector_pose @ end_effector_to_camera
+            rotation = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
+            camera_pose[:3,:3] = camera_pose[:3,:3] @ rotation
+            #relative_R = first_camera_pose[:3,:3].T @ end_effector_pose[:3,:3]
+            #relative_t = end_effector_pose[:3,3] - first_camera_pose[:3,3]
             
-            relative_pose = np.eye(4)
-            relative_pose[:3,:3] = relative_R
-            relative_pose[:3,3] = relative_t
+            #relative_pose = np.eye(4)
+            #relative_pose[:3,:3] = relative_R
+            #relative_pose[:3,:3] = absolute_pose[:3,:3]
+            #relative_pose[:3,3] = relative_t
             
-            print("absolute T: "+str(absolute_pose))
-            print("absolute pose: " + str(absolute_pose[:3,3]))
-            print("first camera pose: " + str(first_camera_pose[:3,3]))
-            print("relative pose: "+str(relative_pose[:3,3]))
+
             # save image
             directory = image_directory_path+req.file
             if not os.path.exists(directory):
@@ -85,7 +88,7 @@ class ImageSaver:
             image.save(path_of_image, "PNG")
             # write to csv file path of image and relative pose
             #csv_writer.writerow([path_of_image,relative_pose.flatten()])
-            file.write(str(list(relative_pose.flatten()))+"\n")
+            file.write(str(list(camera_pose.flatten()))+"\n")
         
         return ImageDataResponse()
 

@@ -28,6 +28,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+find_package( OpenCV REQUIRED )
+include_directories( 
+    include
+    ${OpenCV_INCLUDE_DIRS}
+                      )
+
+
 catkin_install_python(PROGRAMS scripts/imageSaver.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

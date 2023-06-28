@@ -3,7 +3,8 @@ import rospkg
 import csv
 import numpy as np
 import ast
-import re
+from scipy.spatial.transform import Rotation as R
+
 
 
 class CameraPoseShower:
@@ -22,16 +23,12 @@ class CameraPoseShower:
         self.tz = 0.0
 
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('voxel_carving')+"/data/around_X.csv"
-        with open(file_path, mode='r') as csv_file:
-            reader = csv.reader(csv_file)
-            header = next(reader)
-            for line in reader:
-                # read T matrix from csv file
-                string_list = line[1].strip("[]")[1:]
-
-                string_list_with_commas = re.sub(r'\s+', ',', string_list)
-                pose = np.array(eval(string_list_with_commas))
+        file_path = rospack.get_path('voxel_carving')+"/data/red_block_correct_pose.txt"
+        with open(file_path, mode='r') as file:
+            for line in file:
+                string_list = line.rstrip('\n')
+                list  = ast.literal_eval(string_list)
+                pose = np.array(list)
                 pose = np.reshape(pose, (4,4))
                 self.poses.append(pose)
 
@@ -43,7 +40,10 @@ class CameraPoseShower:
                                 [1.0, 1.0, 1.0],  # Bottom-right corner
                                 [-1.0, 1.0, 1.0]])  # Bottom-left corner
         # Transform frustum points to world coordinate system using camera pose
+        
+        print(frustum_points)
         frustum_points_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
+        print(frustum_points_world)
         # Create a line geometry for the camera frustum
         lines = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [2, 3], [3, 4], [4, 1]]
         line_set = o3d.geometry.LineSet()
@@ -52,18 +52,21 @@ class CameraPoseShower:
         return line_set
 
     def display_poses(self):
-        """
-        self.poses = []
-        self.poses.append(np.eye(4))
-        T = np.eye(4)
-        T[:3,3]=[2,2,2]
-        self.poses.append(T)
-        """
+
         visualizer = o3d.visualization.Visualizer()
-        for pose in self.poses:
-            print(pose)
+        
+
+        
+ 
+        for camera_index,pose in enumerate(self.poses):
+            ee_to_camera = np.array([[1, 0, 0, 0.307, 0, 1, 0, 0, 0, 0, 1, 0.487, 0, 0, 0, 1]]).reshape(4,4)
+            rotation = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
+            #pose[:3,:3] = pose[:3,:3] @ rotation
             visualizer.create_window(window_name="Camera Pose", width=800, height=600)
             camera_geometry = self.get_camera_geometry(pose)
+            if camera_index == 0:
+                colors = [[1, 0, 0] for _ in range(len(camera_geometry.lines))]
+                camera_geometry.colors = o3d.utility.Vector3dVector(colors)
             visualizer.add_geometry(camera_geometry)
         visualizer.run()
 
