@@ -61,7 +61,6 @@ class ImageSaver:
 
 
         with open(file_path, mode='a') as file:
-            #csv_writer = csv.writer(csv_file)
             # calculate camera pose relativo to first camera pose
 
             end_effector_to_camera = np.array([[1, 0, 0, 0.307, 0, 1, 0, 0, 0, 0, 1, 0.487, 0, 0, 0, 1]]).reshape(4,4)
@@ -69,14 +68,7 @@ class ImageSaver:
             camera_pose = end_effector_pose @ end_effector_to_camera
             rotation = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
             camera_pose[:3,:3] = camera_pose[:3,:3] @ rotation
-            #relative_R = first_camera_pose[:3,:3].T @ end_effector_pose[:3,:3]
-            #relative_t = end_effector_pose[:3,3] - first_camera_pose[:3,3]
-            
-            #relative_pose = np.eye(4)
-            #relative_pose[:3,:3] = relative_R
-            #relative_pose[:3,:3] = absolute_pose[:3,:3]
-            #relative_pose[:3,3] = relative_t
-            
+
 
             # save image
             directory = image_directory_path+req.file
