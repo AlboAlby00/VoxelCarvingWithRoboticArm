@@ -155,6 +155,7 @@ int main(int argc, char *argv[])
                 const cv::Mat &secondMatrix = matrices[i]; // Get the second matrix
                 cv::Mat T(3, 4, CV_64F);
                 T = secondMatrix(cv::Rect(0, 0, 4, 3)); // only take the first 3 row
+
                 cv::gemm(K, T, 1.0, cv::Mat(), 0.0, P);
             }
 
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
             c.K = K;
             c.R = R;
             c.t = t;
+            std::cout << P << std::endl << std::endl;
             c.Silhouette = silhouette;
             cameras.push_back(c);
         }
@@ -198,8 +200,8 @@ int main(int argc, char *argv[])
 
     /* show example of segmented image */
     cv::Mat original, segmented;
-    cv::resize(cameras.at(1).Image, original, cv::Size(640, 480));
-    cv::resize(cameras.at(1).Silhouette, segmented, cv::Size(640, 480));
+    cv::resize(cameras.at(0).Image, original, cv::Size(640, 480));
+    cv::resize(cameras.at(0).Silhouette, segmented, cv::Size(640, 480));
     cv::imshow("Sample Image", original);
     cv::imshow("Sample Silhouette", segmented);
 

@@ -23,7 +23,7 @@ class CameraPoseShower:
         self.tz = 0.0
 
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('voxel_carving')+"/data/red_block_correct_pose_2.txt"
+        file_path = rospack.get_path('voxel_carving')+"/../data/speriamo_senza_offset.txt"
         with open(file_path, mode='r') as file:
             for line in file:
                 string_list = line.rstrip('\n')
@@ -38,14 +38,18 @@ class CameraPoseShower:
                                 [-1.0, -1.0, 1.0],  # Top-left corner
                                 [1.0, -1.0, 1.0],  # Top-right corner
                                 [1.0, 1.0, 1.0],  # Bottom-right corner
-                                [-1.0, 1.0, 1.0]])  # Bottom-left corner
+                                [-1.0, 1.0, 1.0], # Bottom-left corner
+                                [ 0.0 , 0.0 , 500 ]])  # center projected
+        
+    
+        center_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
         # Transform frustum points to world coordinate system using camera pose
         
         #print(frustum_points)
         frustum_points_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
         #print(frustum_points_world)
         # Create a line geometry for the camera frustum
-        lines = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [2, 3], [3, 4], [4, 1]]
+        lines = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 2], [2, 3], [3, 4], [4, 1]]
         line_set = o3d.geometry.LineSet()
         line_set.points = o3d.utility.Vector3dVector(frustum_points_world)
         line_set.lines = o3d.utility.Vector2iVector(lines)
@@ -84,8 +88,11 @@ class CameraPoseShower:
         # add poses to visualizer
         for camera_index,pose in enumerate(self.poses):
             
-            
-            rotation = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
+            cc = [ ["s"]]
+            rotation_back = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
+            rotation_lixun = [[-0.00544461, -0.99973078,  0.02255472],
+                              [-0.999934 ,   0.00567114,  0.0099921 ],
+                              [-0.01011733 ,-0.02249883, -0.99969567]]
             #pose[:3,:3] = pose[:3,:3] @ rotation
             #print(ee_to_camera @ camera_to_ee)
             visualizer.create_window(window_name="Camera Pose", width=800, height=600)
@@ -96,7 +103,7 @@ class CameraPoseShower:
             visualizer.add_geometry(camera_geometry)
 
         # add cube to visualizer
-        vertices = 0.03 * np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+        vertices = 0.0001 * np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
                      [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]])
         shift_vector = [0.48,0.0,0.33]
         vertices += shift_vector

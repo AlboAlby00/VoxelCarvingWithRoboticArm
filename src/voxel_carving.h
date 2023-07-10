@@ -6,6 +6,8 @@ void carve(float fArray[], startParams params, camera cam)
     cv::Mat silhouette, distImage;
     cv::Canny(cam.Silhouette, silhouette, 0, 255);
     cv::bitwise_not(silhouette, silhouette);
+    cv::imshow("hello",silhouette);
+    cv::waitKey();
     cv::distanceTransform(silhouette, distImage, cv::DIST_L2, 3);
 
     for (int i = 0; i < VOXEL_DIM; i++)
@@ -44,6 +46,9 @@ void carve(float fArray[], startParams params, camera cam)
                     {
                         dist *= -1.0f;
                     }
+                }
+                else{
+                    //std::cout << "problem";
                 }
 
                 if (dist < fArray[i * VOXEL_SLICE + j * VOXEL_DIM + k])
