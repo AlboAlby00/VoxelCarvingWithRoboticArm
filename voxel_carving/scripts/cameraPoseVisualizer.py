@@ -23,7 +23,7 @@ class CameraPoseShower:
         self.tz = 0.0
 
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('voxel_carving')+"/../data/speriamo_senza_offset.txt"
+        file_path = rospack.get_path('voxel_carving')+"/../data/speriamo.txt"
         with open(file_path, mode='r') as file:
             for line in file:
                 string_list = line.rstrip('\n')
@@ -34,12 +34,12 @@ class CameraPoseShower:
 
     def get_camera_geometry(self,pose):
         # Compute the camera frustum points in camera coordinate system
-        frustum_points = 0.005* np.array([[0.0, 0.0, 0.0],  # Camera center
+        frustum_points = 0.0002* np.array([[0.0, 0.0, 0.0],  # Camera center
                                 [-1.0, -1.0, 1.0],  # Top-left corner
                                 [1.0, -1.0, 1.0],  # Top-right corner
                                 [1.0, 1.0, 1.0],  # Bottom-right corner
                                 [-1.0, 1.0, 1.0], # Bottom-left corner
-                                [ 0.0 , 0.0 , 500 ]])  # center projected
+                                [ 0.0 , 0.0 , 1000 ]])  # center projected
         
     
         center_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
@@ -49,7 +49,7 @@ class CameraPoseShower:
         frustum_points_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
         #print(frustum_points_world)
         # Create a line geometry for the camera frustum
-        lines = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 2], [2, 3], [3, 4], [4, 1]]
+        lines = [[0, 1], [0, 2], [0, 3], [0, 4], [0,5] , [1, 2], [2, 3], [3, 4], [4, 1]]
         line_set = o3d.geometry.LineSet()
         line_set.points = o3d.utility.Vector3dVector(frustum_points_world)
         line_set.lines = o3d.utility.Vector2iVector(lines)
@@ -103,9 +103,9 @@ class CameraPoseShower:
             visualizer.add_geometry(camera_geometry)
 
         # add cube to visualizer
-        vertices = 0.0001 * np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+        vertices = 0.005 * np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
                      [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]])
-        shift_vector = [0.48,0.0,0.33]
+        shift_vector = [0.48,0.0,0.35]
         vertices += shift_vector
         faces = np.array([[0, 1, 2], [0, 2, 3], [1, 5, 6], [1, 6, 2],
                         [5, 4, 7], [5, 7, 6], [4, 0, 3], [4, 3, 7],

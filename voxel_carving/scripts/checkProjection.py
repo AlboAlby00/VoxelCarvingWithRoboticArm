@@ -7,7 +7,7 @@ if __name__ == "__main__":
         # get poses
         rospack = rospkg.RosPack()
         poses = []
-        file_path = rospack.get_path('voxel_carving')+"/../data/speriamo_senza_offset.txt"
+        file_path = rospack.get_path('voxel_carving')+"/../data/use_this.txt"
         with open(file_path, mode='r') as file:
             for line in file:
                 string_list = line.rstrip('\n')
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         K[1,2] = cy
 
         # project center of block on all the cameras
-        center = [0.4,0,0.2, 1]
+        center = [0.55,0,0.33, 1]
         count = 0
         for pose in poses:
              #pose[3,:3] *= 1000

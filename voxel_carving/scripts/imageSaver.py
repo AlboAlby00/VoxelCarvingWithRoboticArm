@@ -62,13 +62,14 @@ class ImageSaver:
 
         with open(file_path, mode='a') as file:
             # calculate camera pose relativo to first camera pose
-
-            end_effector_to_camera = np.array([[1, 0, 0, 0.01, 0, 1, 0, 0.02, 0, 0, 1, 0.039978, 0, 0, 0, 1]]).reshape(4,4)
-            end_effector_pose = np.reshape(req.transform, (4 , 4), order='F')
-            #camera_pose = end_effector_pose @ end_effector_to_camera
-            camera_pose = end_effector_pose 
             rotation = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
-            camera_pose[:3,:3] = camera_pose[:3,:3] @ rotation
+            end_effector_to_camera = np.array([[1, 0, 0, 0.01, 0, 1, 0, 0.02, 0, 0, 1, 0.039978, 0, 0, 0, 1]]).reshape(4,4)
+            end_effector_to_camera[:3,:3] = rotation
+            end_effector_pose = np.reshape(req.transform, (4 , 4), order='F')
+            camera_pose = end_effector_pose @ end_effector_to_camera
+            #camera_pose = end_effector_pose 
+            #rotation = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
+            #camera_pose[:3,:3] = camera_pose[:3,:3] @ rotation
 
             
             # save image
