@@ -34,12 +34,12 @@ class CameraPoseShower:
 
     def get_camera_geometry(self,pose):
         # Compute the camera frustum points in camera coordinate system
-        frustum_points = 0.0002* np.array([[0.0, 0.0, 0.0],  # Camera center
+        frustum_points =   10 * np.array([[0.0, 0.0, 0.0],  # Camera center
                                 [-1.0, -1.0, 1.0],  # Top-left corner
                                 [1.0, -1.0, 1.0],  # Top-right corner
                                 [1.0, 1.0, 1.0],  # Bottom-right corner
                                 [-1.0, 1.0, 1.0], # Bottom-left corner
-                                [ 0.0 , 0.0 , 1000 ]])  # center projected
+                                [ 0.0 , 0.0 , 1 ]])  # center projected
         
     
         center_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
@@ -54,6 +54,40 @@ class CameraPoseShower:
         line_set.points = o3d.utility.Vector3dVector(frustum_points_world)
         line_set.lines = o3d.utility.Vector2iVector(lines)
         return line_set
+    
+    def display_camera(self, cameraPose, points):
+        visualizer = o3d.visualization.Visualizer()
+        visualizer.create_window()
+
+        # Add the world axis
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+        visualizer.add_geometry(coordinate_frame)
+        
+        # add pose to visualizer
+       
+        visualizer.create_window(window_name="Camera Pose", width=800, height=600)
+        camera_geometry = self.get_camera_geometry(cameraPose)
+
+        visualizer.add_geometry(camera_geometry)
+   
+        view_control = visualizer.get_view_control()
+        view_control.set_up([0, 0, 1])
+        view_control.set_lookat([0.5, 0.5, 0.5])
+        view_control.set_front([-1.0, -1.0, -1.0])
+
+        for point in points:                       
+            coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=point)
+            visualizer.add_geometry(coordinate_frame)
+
+            # Set the view control (optional)
+        view_control = visualizer.get_view_control()
+        view_control.set_up([0, -1, 0])  # Set the up direction
+        view_control.set_front([0, 0, -1])  # Set the front direction
+
+            # Run the visualization
+        visualizer.run()
+            #vis.destroy_window()
+
     
     def display_world_frame(self):
 
@@ -89,10 +123,7 @@ class CameraPoseShower:
         for camera_index,pose in enumerate(self.poses):
             
             cc = [ ["s"]]
-            rotation_back = R.from_euler("xyz",[180,0,0],degrees=True).as_matrix()
-            rotation_lixun = [[-0.00544461, -0.99973078,  0.02255472],
-                              [-0.999934 ,   0.00567114,  0.0099921 ],
-                              [-0.01011733 ,-0.02249883, -0.99969567]]
+
             #pose[:3,:3] = pose[:3,:3] @ rotation
             #print(ee_to_camera @ camera_to_ee)
             visualizer.create_window(window_name="Camera Pose", width=800, height=600)
@@ -131,4 +162,4 @@ class CameraPoseShower:
 if __name__ == "__main__":
     c = CameraPoseShower()
     c.display_poses()
-    #c.display_world_frame()
+    c.display_world_frame()
