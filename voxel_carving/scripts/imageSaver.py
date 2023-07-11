@@ -20,7 +20,7 @@ class ImageSaver:
         self.get_state_server = rospy.Service(
             '/voxel_carving/save_image', ImageData, self.callback_save_image)
         self.get_ar_image = rospy.Service(
-            '/voxel_carving/get_ar_image', ImageData, self.callback_get_ar_image)
+            '/voxel_carving/save_ar_image', ImageData, self.callback_save_ar_image)
         self.camera_subscriber = rospy.Subscriber(
             "/camera/color/image_raw", Sensor_Image, self.callback_new_image_from_camera)
 
@@ -36,10 +36,11 @@ class ImageSaver:
             self.current_image["height"] = msg.height
             self.current_image["width"] = msg.width
 
-    def callback_get_ar_image(self, req):
+    def callback_save_ar_image(self, req):
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('voxel_carving')+"/../ar_images/"+req.file+".txt"
-        image_directory_path = rospack.get_path('voxel_carving')+"/images/"
+        rospy.loginfo("service called")
+        image_directory_path = rospack.get_path('voxel_carving')+"/../ar_images/"+req.file+".txt"
+        #image_directory_path = rospack.get_path('voxel_carving')+"/images/"
         directory = image_directory_path+req.file
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -47,6 +48,7 @@ class ImageSaver:
         image = Image.frombytes("RGB", (1280, 720), self.current_image["data"])
         image.save(path_of_image, "PNG")
         self.current_image_index+=1
+        return ImageDataResponse()
 
         
         
