@@ -4,10 +4,7 @@ import os
 import numpy as np
 import cameraPoseVisualizer as v
 
-
-if __name__ == "__main__":
-
-    worldMarkerLocations = {
+worldMarkerLocations = {
         "0" : [[0,0,0],[10,0,0],[10,10,0],[0,10,0]],
         "1" : [[20,0,0],[30,0,0],[30,10,0],[20,10,0]],
         "2" : [[40,0,0],[50,0,0],[50,10,0],[40,10,0]],
@@ -25,37 +22,38 @@ if __name__ == "__main__":
         "14" : [[80,60,0],[90,60,0],[90,70,0],[80,70,0]],
         "15" : [[100,60,0],[110,60,0],[110,70,0],[100,70,0]],
     }
-    
-    # detect markers
-    image_path = os.path.dirname(__file__)+"/../../ar_images/test1.jpg"
-    image = cv2.imread(image_path)
-    image =  cv2.resize(image, (1280, 720))
 
+        # Define the object points (marker corners in 3D)
+objPoints = np.array([[0, 0, 0],
+                      [1, 0, 0],
+                      [1, 1, 0],
+                      [0, 1, 0]], 
+                      dtype=np.float32)
+
+cx = 629.14694662
+cy = 314.33765115
+fx = 923.65667725 
+fy = 919.3928833 
+cameraMatrix = np.eye(3)
+cameraMatrix[0,0] = fx
+cameraMatrix[1,1] = fy
+cameraMatrix[0,2] = cx
+cameraMatrix[1,2] = cy
+
+
+def detect_markers(image):
+    
     dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
     parameters =  aruco.DetectorParameters()
     detector = aruco.ArucoDetector(dictionary, parameters)
     markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(image)
     aruco.drawDetectedMarkers(image,markerCorners,markerIds)
+    return image, markerCorners, markerIds
 
-    # estimate poses
 
-    cx = 629.14694662
-    cy = 314.33765115
-    fx = 923.65667725 
-    fy = 919.3928833 
-    cameraMatrix = np.eye(3)
-    cameraMatrix[0,0] = fx
-    cameraMatrix[1,1] = fy
-    cameraMatrix[0,2] = cx
-    cameraMatrix[1,2] = cy
-
-        # Define the object points (marker corners in 3D)
-    objPoints = np.array([[0, 0, 0],
-                        [1, 0, 0],
-                        [1, 1, 0],
-                        [0, 1, 0]], dtype=np.float32)
-
-    # Calculate pose for each marker
+def calculate_camera_pose(markerCorners, markerIds):
+        
+        # Calculate pose for each marker
     for markerCorner in markerCorners:
         corners = markerCorner[0]
         _, rvec, tvec = cv2.solvePnP(objPoints, corners, cameraMatrix, None)
@@ -71,10 +69,6 @@ if __name__ == "__main__":
         worldPointsOfMarker = np.squeeze(worldMarkerLocations[str(markerId)])
         worldPoints.extend(worldPointsOfMarker)
 
-    
-    print(len(worldPoints))
-    print(len(imagePoints))
-
     worldPoints = np.array(worldPoints, dtype=float)
     imagePoints = np.array(imagePoints,dtype=float)
     _, rvec, tvec = cv2.solvePnP(worldPoints, imagePoints, cameraMatrix, None)
@@ -83,18 +77,43 @@ if __name__ == "__main__":
     R = R.T
     tvec = -R @ tvec
 
-    det = np.linalg.det(R)
-
-    #cv2.drawFrameAxes(image, cameraMatrix, None, rvec, tvec, 10)
+    cv2.drawFrameAxes(image, cameraMatrix, None, rvec, tvec, 10)
 
     cameraPose = np.eye(4)
     cameraPose[:3,:3] = R
     cameraPose[:3,3] = tvec.T
 
+    return image,cameraPose, worldPoints
+
+
+if __name__ == "__main__":
+   
+    images = []
+    cameraPoses = []
+    """
+    image_path = os.path.dirname(__file__)+"/../../ar_images/test1.jpg"
+    image = cv2.imread(image_path)
+    image =  cv2.resize(image, (1280, 720))
+    """
+    for index in range(8):
+        image_path = os.path.dirname(__file__)+f"/../../ar_images/ar_3/image_{index+1}.jpeg"
+        image = cv2.imread(image_path) 
+        images.append(image)
+        cv2.imshow("debug", image)
+        cv2.waitKey()
+    
+    file_path = os.path.dirname(__file__)+f"/../../ar_images/ar_3/poses.txt"
+    for image in images:
+        image, markerCorners, markerIds = detect_markers(image)
+        image, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds)
+        cameraPoses.append(cameraPose)
+        cv2.imshow("debug", image)
+        cv2.waitKey()
+        with open(file_path, mode='a') as file:
+            file.write(str(list(cameraPose.flatten()))+"\n")
+
 
     vis = v.CameraPoseShower()
-    vis.display_camera(cameraPose, worldPoints)
+    all_world_points = np.array(list(worldMarkerLocations.values()),dtype=float).reshape(-1,3)
+    vis.display_camera_poses(cameraPoses, all_world_points)
 
-
-    #cv2.imshow("debug", image)
-    #cv2.waitKey(0)

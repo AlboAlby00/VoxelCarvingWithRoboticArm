@@ -39,7 +39,8 @@ class CameraPoseShower:
                                 [1.0, -1.0, 1.0],  # Top-right corner
                                 [1.0, 1.0, 1.0],  # Bottom-right corner
                                 [-1.0, 1.0, 1.0], # Bottom-left corner
-                                [ 0.0 , 0.0 , 1 ]])  # center projected
+                                [ 0.0 , 0.0 , 10 ]
+                                ])  # center projected
         
     
         center_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
@@ -49,13 +50,13 @@ class CameraPoseShower:
         frustum_points_world = np.dot(pose[:3, :3], frustum_points.T).T + pose[:3, 3]
         #print(frustum_points_world)
         # Create a line geometry for the camera frustum
-        lines = [[0, 1], [0, 2], [0, 3], [0, 4], [0,5] , [1, 2], [2, 3], [3, 4], [4, 1]]
+        lines = [[0, 1], [0, 2], [0, 3], [0, 4] , [1, 2], [2, 3], [3, 4], [4, 1]]
         line_set = o3d.geometry.LineSet()
         line_set.points = o3d.utility.Vector3dVector(frustum_points_world)
         line_set.lines = o3d.utility.Vector2iVector(lines)
         return line_set
     
-    def display_camera(self, cameraPose, points):
+    def display_camera_poses(self, cameraPoses, points):
         visualizer = o3d.visualization.Visualizer()
         visualizer.create_window()
 
@@ -66,9 +67,10 @@ class CameraPoseShower:
         # add pose to visualizer
        
         visualizer.create_window(window_name="Camera Pose", width=800, height=600)
-        camera_geometry = self.get_camera_geometry(cameraPose)
 
-        visualizer.add_geometry(camera_geometry)
+        for cameraPose in cameraPoses:
+            camera_geometry = self.get_camera_geometry(cameraPose)
+            visualizer.add_geometry(camera_geometry)
    
         view_control = visualizer.get_view_control()
         view_control.set_up([0, 0, 1])
