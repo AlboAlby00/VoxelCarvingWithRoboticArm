@@ -31,7 +31,7 @@ objPoints = np.array([[0, 0, 0],
                       dtype=np.float32)
 
 cx = 629.14694662
-cy = 314.33765115
+cy = 374.33765115
 fx = 923.65667725 
 fy = 919.3928833 
 cameraMatrix = np.eye(3)
@@ -99,8 +99,8 @@ if __name__ == "__main__":
         image_path = os.path.dirname(__file__)+f"/../../ar_images/ar_3/image_{index+1}.jpeg"
         image = cv2.imread(image_path) 
         images.append(image)
-        cv2.imshow("debug", image)
-        cv2.waitKey()
+        #cv2.imshow("debug", image)
+        #cv2.waitKey()
     
     file_path = os.path.dirname(__file__)+f"/../../ar_images/ar_3/poses.txt"
     for image in images:

@@ -1,42 +1,29 @@
 import numpy as np
-import rospkg
-import ast
 
 if __name__ == "__main__":
-        
-        # get poses
-        rospack = rospkg.RosPack()
-        poses = []
-        file_path = rospack.get_path('voxel_carving')+"/../data/use_this.txt"
-        with open(file_path, mode='r') as file:
-            for line in file:
-                string_list = line.rstrip('\n')
-                list  = ast.literal_eval(string_list)
-                pose = np.array(list)
-                pose = np.reshape(pose, (4,4))
-                poses.append(pose)
+    T = [[0.8870166814211639, 0.30820633300323774, -0.3438171944177354, 62.04740163790905,
+       -0.4614178674416257, 0.5639714040274654, -0.684857508570149, 81.70023126083908, 
+       -0.017174355481584802, 0.7661234311362543, 0.6424639521232343, -66.74656060819173,
+         0.0, 0.0, 0.0, 1.0]]
+    K = [920.88464355, 0, 624.062744140625, 
+        0, 924.34155273, 374.5955547,
+        0, 0, 1]
+    # Convert the list into a NumPy array
+    T = np.array(T)
+    # Convert the list into a NumPy array
+    K = np.array(K)
 
-        # get K
-        cx = 629.14694662
-        cy = 314.33765115
-        fx = 923.65667725 
-        fy = 919.3928833 
-        K = np.eye(3)
-        K[0,0] = fx
-        K[1,1] = fy
-        K[0,2] = cx
-        K[1,2] = cy
+    # Reshape the array into a 3x3 matrix
 
-        # project center of block on all the cameras
-        center = [0.55,0,0.33, 1]
-        count = 0
-        for pose in poses:
-             #pose[3,:3] *= 1000
-             [u,v,_] = K @ (pose @ center)[:3]
-             if not (0 <= u <= 1280) or not (0 <= v <= 720):
-                  print("error")
-                  print(u)
-                  print(v)
-                  count += 1
-                  print(count)
-        
+    # Reshape the array into a 4x4 matrix
+    T = T.reshape((4, 4))
+    T = np.linalg.inv(T)
+    T=T[0:3,:]
+    K = K.reshape((3, 3))
+    P=K@T
+    point3D=np.array([0,0,0,1])
+    point2D=P@point3D
+    point2D[0] /= point2D[2]
+    point2D[1] /= point2D[2]
+    point2D[2] /= point2D[2]
+    print(point2D)
