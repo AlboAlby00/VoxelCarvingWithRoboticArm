@@ -51,7 +51,7 @@ def detect_markers(image):
     return image, markerCorners, markerIds
 
 
-def calculate_camera_pose(markerCorners, markerIds):
+def calculate_camera_pose(image, markerCorners, markerIds):
         
         # Calculate pose for each marker
     for markerCorner in markerCorners:
