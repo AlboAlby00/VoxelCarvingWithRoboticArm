@@ -2,7 +2,7 @@ import cv2
 import cv2.aruco as aruco
 import os
 import numpy as np
-import cameraPoseVisualizer as v
+import utils.cameraPoseVisualizer as v
 
 worldMarkerLocations = {
         "0" : [[0,0,0],[10,0,0],[10,10,0],[0,10,0]],
@@ -51,13 +51,13 @@ def detect_markers(image):
     return image, markerCorners, markerIds
 
 
-def calculate_camera_pose(markerCorners, markerIds):
+def calculate_camera_pose(markerCorners, markerIds, modified_image):
         
         # Calculate pose for each marker
     for markerCorner in markerCorners:
         corners = markerCorner[0]
         _, rvec, tvec = cv2.solvePnP(objPoints, corners, cameraMatrix, None)
-        cv2.drawFrameAxes(image, cameraMatrix, None, rvec, tvec, 0.5)
+        cv2.drawFrameAxes(modified_image, cameraMatrix, None, rvec, tvec, 0.5)
 
     # calculate camera matrix
     markerIds = np.squeeze(markerIds)
@@ -72,18 +72,21 @@ def calculate_camera_pose(markerCorners, markerIds):
     worldPoints = np.array(worldPoints, dtype=float)
     imagePoints = np.array(imagePoints,dtype=float)
     _, rvec, tvec = cv2.solvePnP(worldPoints, imagePoints, cameraMatrix, None)
+    cv2.drawFrameAxes(modified_image, cameraMatrix, None, rvec, tvec, 0.5)
 
     R, _ = cv2.Rodrigues(rvec)
     R = R.T
     tvec = -R @ tvec
+    rvec, _ = cv2.Rodrigues(R)
+    cv2.drawFrameAxes(modified_image, cameraMatrix, None, rvec, tvec, 0.5)
 
-    cv2.drawFrameAxes(image, cameraMatrix, None, rvec, tvec, 10)
 
     cameraPose = np.eye(4)
     cameraPose[:3,:3] = R
     cameraPose[:3,3] = tvec.T
 
-    return image,cameraPose, worldPoints
+    return modified_image, cameraPose, worldPoints
+
 
 
 if __name__ == "__main__":
@@ -96,18 +99,19 @@ if __name__ == "__main__":
     image =  cv2.resize(image, (1280, 720))
     """
     for index in range(8):
-        image_path = os.path.dirname(__file__)+f"/../../ar_images/ar_3/image_{index+1}.jpeg"
+        image_path = os.path.dirname(__file__)+f"/../../../ar_images/ar_3/image_{index+1}.jpeg"
         image = cv2.imread(image_path) 
         images.append(image)
         #cv2.imshow("debug", image)
         #cv2.waitKey()
     
-    file_path = os.path.dirname(__file__)+f"/../../ar_images/ar_3/poses.txt"
+    file_path = os.path.dirname(__file__)+f"/../../../ar_images/ar_3/poses.txt"
     for image in images:
-        image, markerCorners, markerIds = detect_markers(image)
-        image, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds)
+        modified_image = image.copy()
+        modified_image, markerCorners, markerIds = detect_markers(modified_image)
+        modified_image, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds, modified_image)
         cameraPoses.append(cameraPose)
-        cv2.imshow("debug", image)
+        cv2.imshow("debug", modified_image)
         cv2.waitKey()
         with open(file_path, mode='a') as file:
             file.write(str(list(cameraPose.flatten()))+"\n")
