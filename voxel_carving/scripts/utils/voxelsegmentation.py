@@ -16,8 +16,6 @@ import numpy as np
 from PIL import Image
 from markerDetector import detect_markers, calculate_camera_pose
 import cv2 as cv
-from google.colab.patches import cv2_imshow
-from matplotlib import pyplot as plt
 import cv2.aruco as aruco
 import os
 import re
