@@ -3,22 +3,23 @@
 VoxelCarver::VoxelCarver(ros::NodeHandle& n) : n(n)
 {
     this->carveService = 
-        n.advertiseService("/carver/carve", &VoxelCarver::carveCallback, this);
+        n.advertiseService("/voxel_carver/carve", &VoxelCarver::carveCallback, this);
     this->onNewImageService = 
-        n.advertiseService("/carver/on_new_image", &VoxelCarver::onNewImageCallback, this);
+        n.advertiseService("/voxel_carver/on_new_image", &VoxelCarver::onNewImageCallback, this);
 }
 
 bool VoxelCarver::onNewImageCallback(red_msgs::ImageData::Request& req, 
         red_msgs::ImageData::Response& res)
 {   
-    cv::Mat shilhouette(720,1280,CV_32F,req.segmented_image.data());
-    this->silhouettes.emplace_back(shilhouette);
+    ROS_INFO("image saved on carver node");
 
-    cv::Mat image(720,1280,CV_32F,req.data.data());
-    this->images.emplace_back(shilhouette);
+    cv::Mat shilhouette(720,1280,CV_8UC3,req.segmented_image.data());
+    this->silhouettes.emplace_back(shilhouette.clone());
 
-    cv::Mat pose(4,4,CV_32F, req.transform.data());
-    this->poses.emplace_back(pose);
+    cv::Mat image(720,1280,CV_8UC3,req.data.data());
+    this->images.emplace_back(image.clone());
+
+
 
     return true;
 }
@@ -27,6 +28,16 @@ bool VoxelCarver::onNewImageCallback(red_msgs::ImageData::Request& req,
 bool VoxelCarver::carveCallback(std_srvs::Empty::Request& req,
                 std_srvs::Empty::Response& res)
 {
+
+    ROS_INFO("start carving");
+
+    for( auto image : this->images)
+    {
+        
+        cv::imshow("debug", image);
+        cv::waitKey();
+    }
+
     /*
         std::string config_path = req.config_path;
         
@@ -223,7 +234,7 @@ int main(int argc, char *argv[])
 
     VoxelCarver voxelCarver(n);
 
-    ROS_INFO("controller spinning");
+    ROS_INFO("carver spinning");
     ros::spin();
 
     return 0;

@@ -9,6 +9,7 @@ from PIL import Image
 from base64 import decodestring
 from scipy.spatial.transform import Rotation as R
 from utils.markerDetector import detect_markers, calculate_camera_pose
+from cv_bridge import CvBridge
 
 class ImageSaver:
 
@@ -19,7 +20,7 @@ class ImageSaver:
         self.get_ar_image = rospy.Service(
             '/marker_detector/save_ar_image', ImageData, self.callback_save_ar_image)
         self.process_ar_image = rospy.Service(
-            '/marker_detector/process_ar_image', ArucoImage, self.callback_save_ar_image
+            '/marker_detector/process_ar_image', ArucoImage, self.callback_process_ar_image
         )
 
         self.camera_subscriber = rospy.Subscriber(
@@ -43,7 +44,7 @@ class ImageSaver:
     def callback_save_ar_image(self, req):
         rospack = rospkg.RosPack()
         rospy.loginfo("service called")
-        image_directory_path = rospack.get_path('voxel_carving')+"/../ar_images/"+req.file+".txt"
+        image_directory_path = rospack.get_path('voxel_carving')+"/../ar_images/"
         #image_directory_path = rospack.get_path('voxel_carving')+"/images/"
         directory = image_directory_path+req.file
         if not os.path.exists(directory):
@@ -51,6 +52,13 @@ class ImageSaver:
         path_of_image = directory+f"/image_{self.current_image_index}"
         image = Image.frombytes("RGB", (1280, 720), self.current_image["data"])
         image.save(path_of_image, "PNG")
+
+        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        _, markerCorners, markerIds = detect_markers(image.copy())
+        _, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds, image.copy())
+
+        with open(directory+"/poses.txt", mode='a') as file:
+            file.write(str(list(cameraPose.flatten()))+"\n")
 
         self.current_image_index+=1
         return ImageDataResponse()        
@@ -105,15 +113,18 @@ class ImageSaver:
     def callback_process_ar_image(self,req):
 
         rospy.loginfo("process ar image service called")
-        image = Image.frombytes("RGB", (1280, 720), req.image)
-        _, markerCorners, markerIds = detect_markers(image)
-        _, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds)
-        transform = cameraPose.flatten()
+        image = Image.frombytes("RGB", (1280, 720), self.current_image["data"])
+        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        _, markerCorners, markerIds = detect_markers(image.copy())
+        _, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds, image.copy())
+        
         segmented_image = image #TODO
-        cv2.imshow("debug", image)
-        cv2.waitKey()
-        return ArucoImageResponse(transform, image ,segmented_image)
-
+        
+        response = ArucoImageResponse()
+        response.image = np.array(image).tobytes()
+        response.segmented_image = np.array(segmented_image).tobytes()
+        response.transform = cameraPose.flatten()
+        return response
 
 if __name__ == "__main__":
     rospy.init_node('image_saver')

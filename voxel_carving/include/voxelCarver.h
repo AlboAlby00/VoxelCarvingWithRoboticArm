@@ -9,6 +9,7 @@
 #include <regex>
 #include <vector>
 #include "red_msgs/ImageData.h"
+#include "red_msgs/VoxelCarving.h"
 #include "std_srvs/Empty.h"
 
 

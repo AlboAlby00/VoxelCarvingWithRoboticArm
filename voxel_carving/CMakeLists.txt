@@ -37,10 +37,10 @@ include_directories(
 
 
 add_executable(
-  voxelCarver 
+  voxel_carver 
   src/voxelCarver.cpp
   )
-target_link_libraries(voxelCarver ${catkin_LIBRARIES}
+target_link_libraries(voxel_carver ${catkin_LIBRARIES}
                                   ${OpenCV_INCLUDE_DIRS}
                                   ${YAML_CPP_LIBRARIES}
                                   ${VTK_LIBRARIES})
