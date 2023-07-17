@@ -6,9 +6,11 @@
 #include <json/json.h>
 #include <cassert>
 #include <regex>
+#include <random>
 
 int main(int argc, char *argv[])
 {
+
     std::string config_path = "";
     if (argc >= 2)
     {
@@ -72,19 +74,12 @@ int main(int argc, char *argv[])
         matrices = readMatricesFromFile(matrices_path);
     }
 
-    std::string img_ext = use_masks ? ".png" : ".jpg";
-    auto files = use_masks ? std::filesystem::directory_iterator(silhouette_folder) : std::filesystem::directory_iterator(image_folder);
+    std::string img_ext = ".jpg";
+    auto files = std::filesystem::directory_iterator(image_folder);
     std::map<int, std::filesystem::directory_entry> image_paths;
     // Extract and print the indices from the sorted directory entries
     std::regex numericRegex;
-    if (img_ext == ".png")
-    {
-        numericRegex = R"(image[_-](\d+)\.png)";
-    }
-    else
-    {
-        numericRegex = R"(image[_-](\d+)\.jpg)";
-    }
+    numericRegex = R"(image[_-]*(\d+)\.jpg)";
 
     for (const auto &file : files)
     {
@@ -113,20 +108,22 @@ int main(int argc, char *argv[])
             cv::Mat img = cv::imread(entry.path());
 
             cv::Mat silhouette;
-            if (!use_masks)
+            std::string silhouette_path = replaceSubstring(entry.path(), "original_images", "segmented_images");
+            silhouette_path = replaceSubstring(silhouette_path, ".jpg", ".png");
+
+            if (use_masks)
+            {
+                silhouette = cv::imread(silhouette_path);
+                cv::cvtColor(silhouette, silhouette, cv::COLOR_BGR2GRAY); // Convert to grayscale // Apply thresholding  -need to change here our gaonl is to do the same as the template- siluhette need to be a black and white
+            }
+            else
             {
                 cv::cvtColor(img, silhouette, cv::COLOR_BGR2HSV);
                 cv::inRange(silhouette, cv::Scalar(0, 0, 30), cv::Scalar(255, 255, 255), silhouette); // binary image -black 0; while =1
-                std::string silhouette_path = replaceSubstring(entry.path(), "original_images", "segmented_images");
-                silhouette_path = replaceSubstring(silhouette_path, ".jpg", ".png");
                 if (!fileExists(silhouette_path))
                 {
                     cv::imwrite(silhouette_path, silhouette);
                 }
-            }
-            else
-            {
-                cv::cvtColor(img, silhouette, cv::COLOR_BGR2GRAY);
             }
 
             cv::Mat P;
@@ -145,16 +142,17 @@ int main(int argc, char *argv[])
                 viff_fs[smat.str()] >> P;
                 cv::decomposeProjectionMatrix(P, K, R, t);
                 // DecomposeProjectionMatrix instrinsics need to be overwritten?
-                // K.at<float>(0, 0) = fx;
-                // K.at<float>(1, 1) = fy;
-                // K.at<float>(0, 2) = cx;
-                // K.at<float>(1, 2) = cy;
+                K.at<float>(0, 0) = fx;
+                K.at<float>(1, 1) = fy;
+                K.at<float>(0, 2) = cx;
+                K.at<float>(1, 2) = cy;
             }
             else
             {
-                const cv::Mat &secondMatrix = matrices[i]; // Get the second matrix
+                cv::Mat secondMatrix = matrices[i]; // Get the second matrix
                 cv::Mat T(3, 4, CV_64F);
-                T = secondMatrix(cv::Rect(0, 0, 4, 3)); // only take the first 3 row
+                cv::invert(secondMatrix, T);
+                T = T(cv::Rect(0, 0, 4, 3)); // only take the first 3 row
                 cv::gemm(K, T, 1.0, cv::Mat(), 0.0, P);
             }
 
@@ -165,6 +163,7 @@ int main(int argc, char *argv[])
             c.R = R;
             c.t = t;
             c.Silhouette = silhouette;
+            c.image_name = entry.path().filename().string();
             cameras.push_back(c);
         }
     }
@@ -177,33 +176,172 @@ int main(int argc, char *argv[])
     startParams params;
     params.startX = xmin - std::abs(xmax - xmin) * 0.15;
     params.startY = ymin - std::abs(ymax - ymin) * 0.15;
-    params.startZ = 0.0f;
+    params.startZ = zmin - std::abs(zmax - zmin) * 0.15;
     params.voxelWidth = bbwidth / VOXEL_DIM;
     params.voxelHeight = bbheight / VOXEL_DIM;
     params.voxelDepth = bbdepth / VOXEL_DIM;
 
     /* 3 dimensional voxel grid */
     float *fArray = new float[VOXEL_SIZE];
+    unsigned char *colourData = new unsigned char[VOXEL_SIZE * 3];
+    std::vector<voxel> voxels;
     std::fill_n(fArray, VOXEL_SIZE, 1000.0f);
 
     std::cout << "Carving Voxel Grid now...\n";
     /* carving model for every given camera image */
     for (int i = 0; i < image_paths.size(); i++)
     {
-        carve(fArray, params, cameras.at(i));
+        carve(fArray, params, cameras.at(i), voxels);
     }
     std::cout << "Voxel Carving Complete \n";
 
     /** TODO: Voxel Colouring **/
+    colourVoxels(cameras, voxels);
+
+    // // Create VTK points to hold the voxel positions
+    // vtkSmartPointer<vtkPoints> points =
+    //     vtkSmartPointer<vtkPoints>::New();
+
+    // for (const auto &voxel : voxels)
+    // {
+    //     points->InsertNextPoint(voxel.xpos, voxel.ypos, voxel.zpos);
+    // }
+
+    // // Create a VTK polydata to represent the voxel grid
+    // vtkSmartPointer<vtkPolyData> polyData =
+    //     vtkSmartPointer<vtkPolyData>::New();
+    // polyData->SetPoints(points);
+
+    // // Create VTK cells for the voxel grid
+    // vtkSmartPointer<vtkCellArray> cells =
+    //     vtkSmartPointer<vtkCellArray>::New();
+
+    // for (int i = 0; i < voxels.size(); ++i)
+    // {
+    //     vtkSmartPointer<vtkIdList> pointIds =
+    //         vtkSmartPointer<vtkIdList>::New();
+    //     pointIds->InsertNextId(i);
+    //     cells->InsertNextCell(pointIds);
+    // }
+
+    // polyData->SetVerts(cells);
+
+    // // Create VTK colors for the voxel grid
+    // vtkSmartPointer<vtkUnsignedCharArray> colors =
+    //     vtkSmartPointer<vtkUnsignedCharArray>::New();
+    // colors->SetNumberOfComponents(3);
+    // colors->SetNumberOfTuples(voxels.size());
+
+    // for (int i = 0; i < voxels.size(); ++i)
+    // {
+    //     colors->SetTuple3(i, static_cast<unsigned char>(voxels[i].red),
+    //                       static_cast<unsigned char>(voxels[i].green),
+    //                       static_cast<unsigned char>(voxels[i].blue));
+    // }
+
+    // polyData->GetPointData()->SetScalars(colors);
+
+    // // Create a VTK mapper and actor
+    // vtkSmartPointer<vtkPolyDataMapper> mapper =
+    //     vtkSmartPointer<vtkPolyDataMapper>::New();
+    // mapper->SetInputData(polyData);
+
+    // vtkSmartPointer<vtkActor> actor =
+    //     vtkSmartPointer<vtkActor>::New();
+    // actor->SetMapper(mapper);
+
+    // // Create a VTK renderer, render window, and interactor
+    // vtkSmartPointer<vtkRenderer> renderer =
+    //     vtkSmartPointer<vtkRenderer>::New();
+
+    // vtkSmartPointer<vtkRenderWindow> renderWindow =
+    //     vtkSmartPointer<vtkRenderWindow>::New();
+    // renderWindow->AddRenderer(renderer);
+
+    // vtkSmartPointer<vtkRenderWindowInteractor> interactor =
+    //     vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    // interactor->SetRenderWindow(renderWindow);
+
+    // // Add the actor to the renderer and set the background color
+    // renderer->AddActor(actor);
+    // renderer->SetBackground(0.1, 0.2, 0.4);
+
+    // // Set up camera parameters
+    // // ...
+
+    // // Render the scene and start the interaction
+    // renderWindow->Render();
+    // interactor->Start();
+
+    // Declaring Variables
+    vtkSmartPointer<vtkImageData> imageData;
+    vtkSmartPointer<vtkVolumeProperty> volumeProperty;
+    vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity;
+    vtkSmartPointer<vtkColorTransferFunction> color;
+    vtkSmartPointer<vtkVolume> volume;
+    vtkSmartPointer<vtkSmartVolumeMapper> mapper;
+    vtkSmartPointer<vtkActor> actor;
+    vtkSmartPointer<vtkRenderer> renderer;
+    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor;
+    vtkSmartPointer<vtkRenderWindow> renderWindow;
+
+    imageData = vtkSmartPointer<vtkImageData>::New();
+    imageData->SetDimensions(VOXEL_DIM + 1, VOXEL_DIM + 1, VOXEL_DIM + 1);
+    imageData->AllocateScalars(VTK_INT, 1);
+    volumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
+    compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
+    color = vtkSmartPointer<vtkColorTransferFunction>::New();
+    volume = vtkSmartPointer<vtkVolume>::New();
+    mapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
+    actor = vtkSmartPointer<vtkActor>::New();
+    renderer = vtkSmartPointer<vtkRenderer>::New();
+    renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+    volumeProperty->ShadeOff();
+    volumeProperty->SetInterpolationType(0);
+    volumeProperty->SetColor(color);
+    volumeProperty->SetScalarOpacity(compositeOpacity);
+    imageData->AllocateScalars(VTK_INT, 1);
+    renderWindow->AddRenderer(renderer);
+    renderWindowInteractor->SetRenderWindow(renderWindow);
+    renderer->SetBackground(0.5, 0.5, 0.5);
+    renderWindow->SetSize(800, 800);
+    mapper->SetBlendModeToComposite();
+    imageData->UpdateCellGhostArrayCache();
+    mapper->SetRequestedRenderModeToRayCast();
+    mapper->SetInputData(imageData);
+    volume->SetMapper(mapper);
+    volume->SetProperty(volumeProperty);
+    renderer->AddViewProp(volume);
+    volumeProperty->ShadeOff();
+
+    // I is supposed to store the 3D data which has to be shown as volume visualization. This 3D data is stored
+    // as a 1D array in which the order of iteration over 3 dimensions is x->y->z, this leads to the following
+    // 3D to 1D index conversion farmula index1D =  i + X1*j + X1*X2*k
+    // vector<int> I(VOXEL_SIZE, 0);            // No need to use int* I = new int[X1X2X3] //Vectors are good
+    // std::iota(&I[0], &I[0] + VOXEL_SIZE, 1); // Creating dummy data as 1,2,3...X1X2X3
+
+    // Setting Up Display Properties
+    for (int i = 1; i < VOXEL_SIZE; i++)
+    {
+        compositeOpacity->AddPoint(i, 1);
+        color->AddRGBPoint(i, (double)voxels[i].red, (double)voxels[i].green, (double)voxels[i].blue);
+    }
+
+    renderer->ResetCamera();
+    renderWindow->Render();
+    renderWindowInteractor->Start();
+    getchar();
 
     /* show example of segmented image */
-    cv::Mat original, segmented;
+    cv::Mat original,
+        segmented;
     cv::resize(cameras.at(1).Image, original, cv::Size(640, 480));
     cv::resize(cameras.at(1).Silhouette, segmented, cv::Size(640, 480));
     cv::imshow("Sample Image", original);
     cv::imshow("Sample Silhouette", segmented);
 
-    renderModel(fArray, params, obj_path);
+    renderModel(fArray, params, obj_path, voxels);
 
     return 0;
 }

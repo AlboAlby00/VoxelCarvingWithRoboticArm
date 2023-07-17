@@ -1,80 +1,82 @@
 // /*** UMAIR: **/
+#include "common.h"
+#include <random>
 
-// void calculateColorStats(cv::Mat &image, std::vector<coord> &pixels, cv::Mat &colorMean, cv::Mat &colorStandardDeviation)
+void colourVoxels(std::vector<camera> &cameras, std::vector<voxel> &voxels)
+{
+    for (auto &voxel : voxels)
+    {
+        float runningSumR = 0.0;
+        float runningSumG = 0.0;
+        float runningSumB = 0.0;
+        int numContributingCameras = 0;
+
+        for (auto &camera : cameras)
+        {
+            cv::Mat voxel_coord(4, 1, CV_32F);
+            voxel_coord.at<float>(0) = voxel.xpos;
+            voxel_coord.at<float>(1) = voxel.ypos;
+            voxel_coord.at<float>(2) = voxel.zpos;
+            voxel_coord.at<float>(3) = 1.0f;
+
+            cv::Mat pixel_coord;
+            cv::gemm(camera.P, voxel_coord, 1.0, cv::Mat(), 0.0, pixel_coord);
+            // cv::Mat pixel_coord = cam.P * voxel_coord;
+
+            coord im;
+            im.x = pixel_coord.at<float>(0) / pixel_coord.at<float>(2);
+            im.y = pixel_coord.at<float>(1) / pixel_coord.at<float>(2);
+
+            if (im.x >= 0 && im.x < IMG_WIDTH &&
+                im.y >= 0 && im.y < IMG_HEIGHT &&
+                camera.Silhouette.at<uchar>(im.y, im.x) != 0 && voxel.value <= 0)
+            {
+                cv::Vec3b pixelColor = camera.Image.at<cv::Vec3b>(im.y, im.x);
+                runningSumB += pixelColor[0];
+                runningSumG += pixelColor[1];
+                runningSumR += pixelColor[2];
+                numContributingCameras++;
+            }
+        }
+
+        if (numContributingCameras > 0)
+        {
+            voxel.red = runningSumR / numContributingCameras;
+            voxel.green = runningSumG / numContributingCameras;
+            voxel.blue = runningSumB / numContributingCameras;
+            std::cout << "Voxel (" << voxel.xpos << ", " << voxel.ypos << ", " << voxel.zpos << ") has colour " << voxel.red << " " << voxel.green << " " << voxel.blue << "\n";
+        }
+    }
+}
+
+// /*********/
+
+// void colourVoxels(unsigned char *colourData)
 // {
-//     cv::Mat pixelColors(pixels.size(), 1, CV_8UC3);
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_int_distribution<int> dis(0, 255);
 
-//     for (size_t i = 0; i < pixels.size(); i++)
+//     for (int i = 0; i < VOXEL_DIM; i++)
 //     {
-//         cv::Vec3b pixelColor = image.at<cv::Vec3b>(pixels[i].y, pixels[i].x);
-//         pixelColors.at<cv::Vec3b>(i, 0) = pixelColor;
-//     }
-
-//     cv::Scalar sum;
-//     cv::accumulate(pixelColors, sum);
-
-//     cv::Scalar mean;
-//     cv::meanStdDev(pixelColors, colorMean, colorStandardDeviation);
-// }
-
-// void voxelColoring(std::vector<cv::Mat> &images, std::array<float, VOXEL_SIZE> &voxels, std::vector<cv::Mat> &occlusionBitmaps, std::vector<camera> &cameras, std::vector<startParams> &params, double threshold)
-// {
-//     for (const auto &image : images)
-//     {
-//         occlusionBitmaps.push_back(cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0)));
-//     }
-
-//     for (int layer = 0; layer < VOXEL_DIM; layer++)
-//     {
-//         for (int i = layer * VOXEL_SLICE; i < (layer + 1) * VOXEL_SLICE; i++)
+//         for (int j = 0; j < VOXEL_DIM; j++)
 //         {
-//             int voxelIndex = layer * VOXEL_SLICE + i;
-
-//             voxel &V = voxels[voxelIndex];
-
-//             for (int j = 0; j < images.size(); j++)
+//             for (int k = 0; k < VOXEL_DIM; k++)
 //             {
-//                 camera &cam = cameras[j];
-//                 startParams &param = params[j];
+//                 int voxelIndex = i * VOXEL_DIM * VOXEL_DIM + j * VOXEL_DIM + k;
+//                 int colorIndex = voxelIndex * 3;
 
-//                 std::vector<coord> pixels;
+//                 // Set the color values for the current voxel
+//                 // Generate random color values for the current voxel
+//                 unsigned char red = static_cast<unsigned char>(dis(gen));
+//                 unsigned char green = static_cast<unsigned char>(dis(gen));
+//                 unsigned char blue = static_cast<unsigned char>(dis(gen));
 
-//                 // Find the set P(i) of pixels
-//                 coord im = projectVoxel(cam, V);
-
-//                 // Determine the pixels in P(i)
-//                 int xStart = std::max(0, static_cast<int>(im.x - param.startX) / param.voxelWidth);
-//                 int yStart = std::max(0, static_cast<int>(im.y - param.startY) / param.voxelHeight);
-//                 int xEnd = std::min(IMG_WIDTH - 1, static_cast<int>(im.x - param.startX + param.voxelWidth) / param.voxelWidth);
-//                 int yEnd = std::min(IMG_HEIGHT - 1, static_cast<int>(im.y - param.startY + param.voxelHeight) / param.voxelHeight);
-
-//                 for (int x = xStart; x <= xEnd; x++)
-//                 {
-//                     for (int y = yStart; y <= yEnd; y++)
-//                     {
-//                         pixels.push_back(coord{x, y});
-//                     }
-//                 }
-
-//                 cv::Scalar colorMean;
-//                 double colorStandardDeviation;
-//                 calculateColorStats(cam.Image, pixels, colorMean, colorStandardDeviation);
-
-//                 if (colorStandardDeviation < threshold)
-//                 {
-//                     voxels[voxelIndex] = colorMean[0];
-//                     for (int j = 0; j < images.size(); j++)
-//                     {
-//                         occlusionBitmaps[j].setTo(255, cam.Silhouette);
-//                     }
-//                 }
-//                 else
-//                 {
-//                     voxels[voxelIndex] = OUTSIDE;
-//                 }
+//                 // Assign the color values to the colorData array
+//                 colourData[colorIndex] = red;
+//                 colourData[colorIndex + 1] = green;
+//                 colourData[colorIndex + 2] = blue;
 //             }
 //         }
 //     }
 // }
-
-// /*********/
