@@ -17,14 +17,14 @@ This codebase requires the following libraries and packages to be installed:
 
 This codebase requires a dataset of the target object in a specific format, as well as a configuration file for necessary parameters. The dataset must be placed in the following format:
  
- - assets/
+- assets/
   - <dataset_name>
-   - original_images/
-    - image_1.jpg
-    - . . .
+    - original_images/
+      - image_1.jpg
+      - . . .
    - segmented_images/
-    - image_1.png
-    - . . .
+      - image_1.png
+      - . . .
    - pose.txt
 
 `pose.txt` contains the camera poses for each frame. Each row is a 16x1 row vector representing the 4x4 Transformation matrix.
