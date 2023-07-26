@@ -8,6 +8,8 @@
 #include <regex>
 #include <random>
 
+std::vector<voxel> VOXELS;
+
 int main(int argc, char *argv[])
 {
 
@@ -58,6 +60,17 @@ int main(int argc, char *argv[])
     float zmin = config["zmin"].asFloat();
     float zmax = config["zmax"].asFloat();
 
+    const Json::Value &skip_frames_array = config["skip_frames"];
+    std::vector<int> skip_frames;
+    // Iterate over the array and extract integer values
+    for (unsigned int i = 0; i < skip_frames_array.size(); ++i)
+    {
+        if (skip_frames_array[i].isInt())
+        {
+            skip_frames.push_back(skip_frames_array[i].asInt());
+        }
+    }
+
     std::vector<camera> cameras;
     std::string extension = getFileExtension(matrices_path);
 
@@ -91,15 +104,19 @@ int main(int argc, char *argv[])
             if (std::regex_search(fileName, match, numericRegex) && match.size() > 1)
             {
                 int index = std::stoi(match[1]);
-                image_paths[index - 1] = file;
+                if (std::find(skip_frames.begin(), skip_frames.end(), index) == skip_frames.end())
+                    image_paths[index - 1] = file;
             }
         }
     }
-    std::cout << "Found " << image_paths.size() << " images\n";
+    std::cout << "Found " << image_paths.size() << " images after filtering skipped frames\n";
 
     // Get the size and index the elements
-    for (int i = 0; i < image_paths.size(); i++)
+    for (auto kv : image_paths)
     {
+        int i = kv.first;
+        // if (std::find(skip_frames.begin(), skip_frames.end(), i - 1) != skip_frames.end())
+        // continue;
         auto entry = image_paths[i];
         if (entry.is_regular_file() && entry.path().extension() == img_ext)
         {
@@ -174,164 +191,45 @@ int main(int argc, char *argv[])
     float bbdepth = std::abs(zmax - zmin) * 1.05;
 
     startParams params;
-    params.startX = xmin - std::abs(xmax - xmin) * 0.15;
-    params.startY = ymin - std::abs(ymax - ymin) * 0.15;
-    params.startZ = zmin - std::abs(zmax - zmin) * 0.15;
-    params.voxelWidth = bbwidth / VOXEL_DIM;
-    params.voxelHeight = bbheight / VOXEL_DIM;
-    params.voxelDepth = bbdepth / VOXEL_DIM;
+    // params.startX = xmin - std::abs(xmax - xmin) * 0.15;
+    // params.startY = ymin - std::abs(ymax - ymin) * 0.15;
+    // params.startZ = zmin - std::abs(zmax - zmin) * 0.15;
+
+    // params.voxelWidth = bbwidth / VOXEL_DIM;
+    // params.voxelHeight = bbheight / VOXEL_DIM;
+    // params.voxelDepth = bbdepth / VOXEL_DIM;
+
+    // Override 3D bbox
+    params.startX = xmin;
+    params.startY = ymin;
+    params.startZ = zmin;
+
+    params.voxelWidth = 100.0 / VOXEL_DIM;
+    params.voxelHeight = 100.0 / VOXEL_DIM;
+    params.voxelDepth = 100.0 / VOXEL_DIM;
 
     /* 3 dimensional voxel grid */
     float *fArray = new float[VOXEL_SIZE];
     unsigned char *colourData = new unsigned char[VOXEL_SIZE * 3];
-    std::vector<voxel> voxels;
     std::fill_n(fArray, VOXEL_SIZE, 1000.0f);
 
     std::cout << "Carving Voxel Grid now...\n";
     /* carving model for every given camera image */
     for (int i = 0; i < image_paths.size(); i++)
     {
-        carve(fArray, params, cameras.at(i), voxels);
+        carve(fArray, params, cameras.at(i), VOXELS);
     }
     std::cout << "Voxel Carving Complete \n";
 
     /** TODO: Voxel Colouring **/
-    colourVoxels(cameras, voxels);
+    std::cout << "Colouring Voxel Grid...\n";
+    colourVoxels(cameras, VOXELS);
+    std::cout << "Colouring completed \n";
 
-    // // Create VTK points to hold the voxel positions
-    // vtkSmartPointer<vtkPoints> points =
-    //     vtkSmartPointer<vtkPoints>::New();
-
-    // for (const auto &voxel : voxels)
-    // {
-    //     points->InsertNextPoint(voxel.xpos, voxel.ypos, voxel.zpos);
-    // }
-
-    // // Create a VTK polydata to represent the voxel grid
-    // vtkSmartPointer<vtkPolyData> polyData =
-    //     vtkSmartPointer<vtkPolyData>::New();
-    // polyData->SetPoints(points);
-
-    // // Create VTK cells for the voxel grid
-    // vtkSmartPointer<vtkCellArray> cells =
-    //     vtkSmartPointer<vtkCellArray>::New();
-
-    // for (int i = 0; i < voxels.size(); ++i)
-    // {
-    //     vtkSmartPointer<vtkIdList> pointIds =
-    //         vtkSmartPointer<vtkIdList>::New();
-    //     pointIds->InsertNextId(i);
-    //     cells->InsertNextCell(pointIds);
-    // }
-
-    // polyData->SetVerts(cells);
-
-    // // Create VTK colors for the voxel grid
-    // vtkSmartPointer<vtkUnsignedCharArray> colors =
-    //     vtkSmartPointer<vtkUnsignedCharArray>::New();
-    // colors->SetNumberOfComponents(3);
-    // colors->SetNumberOfTuples(voxels.size());
-
-    // for (int i = 0; i < voxels.size(); ++i)
-    // {
-    //     colors->SetTuple3(i, static_cast<unsigned char>(voxels[i].red),
-    //                       static_cast<unsigned char>(voxels[i].green),
-    //                       static_cast<unsigned char>(voxels[i].blue));
-    // }
-
-    // polyData->GetPointData()->SetScalars(colors);
-
-    // // Create a VTK mapper and actor
-    // vtkSmartPointer<vtkPolyDataMapper> mapper =
-    //     vtkSmartPointer<vtkPolyDataMapper>::New();
-    // mapper->SetInputData(polyData);
-
-    // vtkSmartPointer<vtkActor> actor =
-    //     vtkSmartPointer<vtkActor>::New();
-    // actor->SetMapper(mapper);
-
-    // // Create a VTK renderer, render window, and interactor
-    // vtkSmartPointer<vtkRenderer> renderer =
-    //     vtkSmartPointer<vtkRenderer>::New();
-
-    // vtkSmartPointer<vtkRenderWindow> renderWindow =
-    //     vtkSmartPointer<vtkRenderWindow>::New();
-    // renderWindow->AddRenderer(renderer);
-
-    // vtkSmartPointer<vtkRenderWindowInteractor> interactor =
-    //     vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    // interactor->SetRenderWindow(renderWindow);
-
-    // // Add the actor to the renderer and set the background color
-    // renderer->AddActor(actor);
-    // renderer->SetBackground(0.1, 0.2, 0.4);
-
-    // // Set up camera parameters
-    // // ...
-
-    // // Render the scene and start the interaction
-    // renderWindow->Render();
-    // interactor->Start();
-
-    // Declaring Variables
-    vtkSmartPointer<vtkImageData> imageData;
-    vtkSmartPointer<vtkVolumeProperty> volumeProperty;
-    vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity;
-    vtkSmartPointer<vtkColorTransferFunction> color;
-    vtkSmartPointer<vtkVolume> volume;
-    vtkSmartPointer<vtkSmartVolumeMapper> mapper;
-    vtkSmartPointer<vtkActor> actor;
-    vtkSmartPointer<vtkRenderer> renderer;
-    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor;
-    vtkSmartPointer<vtkRenderWindow> renderWindow;
-
-    imageData = vtkSmartPointer<vtkImageData>::New();
-    imageData->SetDimensions(VOXEL_DIM + 1, VOXEL_DIM + 1, VOXEL_DIM + 1);
-    imageData->AllocateScalars(VTK_INT, 1);
-    volumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
-    compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
-    color = vtkSmartPointer<vtkColorTransferFunction>::New();
-    volume = vtkSmartPointer<vtkVolume>::New();
-    mapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
-    actor = vtkSmartPointer<vtkActor>::New();
-    renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-    volumeProperty->ShadeOff();
-    volumeProperty->SetInterpolationType(0);
-    volumeProperty->SetColor(color);
-    volumeProperty->SetScalarOpacity(compositeOpacity);
-    imageData->AllocateScalars(VTK_INT, 1);
-    renderWindow->AddRenderer(renderer);
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-    renderer->SetBackground(0.5, 0.5, 0.5);
-    renderWindow->SetSize(800, 800);
-    mapper->SetBlendModeToComposite();
-    imageData->UpdateCellGhostArrayCache();
-    mapper->SetRequestedRenderModeToRayCast();
-    mapper->SetInputData(imageData);
-    volume->SetMapper(mapper);
-    volume->SetProperty(volumeProperty);
-    renderer->AddViewProp(volume);
-    volumeProperty->ShadeOff();
-
-    // I is supposed to store the 3D data which has to be shown as volume visualization. This 3D data is stored
-    // as a 1D array in which the order of iteration over 3 dimensions is x->y->z, this leads to the following
-    // 3D to 1D index conversion farmula index1D =  i + X1*j + X1*X2*k
-    // vector<int> I(VOXEL_SIZE, 0);            // No need to use int* I = new int[X1X2X3] //Vectors are good
-    // std::iota(&I[0], &I[0] + VOXEL_SIZE, 1); // Creating dummy data as 1,2,3...X1X2X3
-
-    // Setting Up Display Properties
-    for (int i = 1; i < VOXEL_SIZE; i++)
-    {
-        compositeOpacity->AddPoint(i, 1);
-        color->AddRGBPoint(i, (double)voxels[i].red, (double)voxels[i].green, (double)voxels[i].blue);
-    }
-
-    renderer->ResetCamera();
-    renderWindow->Render();
-    renderWindowInteractor->Start();
-    getchar();
+    /** VTK **/
+    renderColoredVoxels(VOXELS);
+    // renderColoredVoxels(VOXELS, params);
+    /*****/
 
     /* show example of segmented image */
     cv::Mat original,
@@ -341,7 +239,7 @@ int main(int argc, char *argv[])
     cv::imshow("Sample Image", original);
     cv::imshow("Sample Silhouette", segmented);
 
-    renderModel(fArray, params, obj_path, voxels);
+    renderModel(fArray, params, obj_path, VOXELS);
 
     return 0;
 }

@@ -7,8 +7,8 @@ void carve(float fArray[], startParams params, camera cam, std::vector<voxel> &v
     cv::bitwise_not(silhouette, silhouette);
     cv::distanceTransform(silhouette, distImage, cv::DIST_L2, 3);
 
-    cv::Mat projectedImage;           // Create an image to store the projected voxel
-    cam.Image.copyTo(projectedImage); // Initialize the projected image with the segmentation mask
+    // cv::Mat projectedImage;           // Create an image to store the projected voxel
+    // cam.Image.copyTo(projectedImage); // Initialize the projected image with the segmentation mask
 
     for (int i = 0; i < VOXEL_DIM; i++)
     {
@@ -51,9 +51,9 @@ void carve(float fArray[], startParams params, camera cam, std::vector<voxel> &v
                     }
                     else
                     {
-                        int px = static_cast<int>(im.x);
-                        int py = static_cast<int>(im.y);
-                        projectedImage.at<cv::Vec3b>(py, px) = cv::Vec3b(0, 0, 255); // Set color as red (BGR)
+                        // int px = static_cast<int>(im.x);
+                        // int py = static_cast<int>(im.y);
+                        // projectedImage.at<cv::Vec3b>(py, px) = cv::Vec3b(0, 0, 255); // Set color as red (BGR)
                     }
                 }
                 if (dist < fArray[i * VOXEL_SLICE + j * VOXEL_DIM + k])
@@ -66,5 +66,5 @@ void carve(float fArray[], startParams params, camera cam, std::vector<voxel> &v
         }
     }
     // Save the final image after projecting all voxels to disk
-    cv::imwrite("../assets/projected_voxels/" + cam.image_name, projectedImage);
+    // cv::imwrite("../assets/projected_voxels/" + cam.image_name, projectedImage);
 }

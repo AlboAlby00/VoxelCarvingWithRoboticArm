@@ -1,6 +1,25 @@
 // /*** UMAIR: **/
 #include "common.h"
 #include <random>
+#include <GL/glut.h> // Make sure to include the appropriate OpenGL headers
+
+#include <vtkSmartPointer.h>
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkFloatArray.h>
+#include <vtkPointData.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkGlyph3D.h>
+#include <vtkSphereSource.h>
+#include <vtkNamedColors.h>
+#include <vtkPolyDataMapper.h>
 
 void colourVoxels(std::vector<camera> &cameras, std::vector<voxel> &voxels)
 {
@@ -44,39 +63,118 @@ void colourVoxels(std::vector<camera> &cameras, std::vector<voxel> &voxels)
             voxel.red = runningSumR / numContributingCameras;
             voxel.green = runningSumG / numContributingCameras;
             voxel.blue = runningSumB / numContributingCameras;
-            std::cout << "Voxel (" << voxel.xpos << ", " << voxel.ypos << ", " << voxel.zpos << ") has colour " << voxel.red << " " << voxel.green << " " << voxel.blue << "\n";
+            // std::cout << "Voxel (" << voxel.xpos << ", " << voxel.ypos << ", " << voxel.zpos << ") has colour " << voxel.red << " " << voxel.green << " " << voxel.blue << "\n";
         }
     }
 }
 
-// /*********/
-
-// void colourVoxels(unsigned char *colourData)
+// void renderColoredVoxels(const std::vector<voxel> &voxelGrid, const startParams &params)
 // {
-//     std::random_device rd;
-//     std::mt19937 gen(rd());
-//     std::uniform_int_distribution<int> dis(0, 255);
+//     int imgWidth = IMG_WIDTH;
+//     int imgHeight = IMG_HEIGHT;
 
-//     for (int i = 0; i < VOXEL_DIM; i++)
+//     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+//     vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
+//     vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
+
+//     colors->SetNumberOfComponents(3);
+
+//     for (const voxel &v : voxelGrid)
 //     {
-//         for (int j = 0; j < VOXEL_DIM; j++)
+//         if (v.red >= 0)
 //         {
-//             for (int k = 0; k < VOXEL_DIM; k++)
-//             {
-//                 int voxelIndex = i * VOXEL_DIM * VOXEL_DIM + j * VOXEL_DIM + k;
-//                 int colorIndex = voxelIndex * 3;
+//             points->InsertNextPoint(v.xpos, v.ypos, v.zpos);
+//             vertices->InsertNextCell(1);
+//             vertices->InsertCellPoint(points->GetNumberOfPoints() - 1);
 
-//                 // Set the color values for the current voxel
-//                 // Generate random color values for the current voxel
-//                 unsigned char red = static_cast<unsigned char>(dis(gen));
-//                 unsigned char green = static_cast<unsigned char>(dis(gen));
-//                 unsigned char blue = static_cast<unsigned char>(dis(gen));
-
-//                 // Assign the color values to the colorData array
-//                 colourData[colorIndex] = red;
-//                 colourData[colorIndex + 1] = green;
-//                 colourData[colorIndex + 2] = blue;
-//             }
+//             colors->InsertNextTuple3(static_cast<unsigned char>(v.red * 255),
+//                                      static_cast<unsigned char>(v.green * 255),
+//                                      static_cast<unsigned char>(v.blue * 255));
 //         }
 //     }
+
+//     vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+//     polyData->SetPoints(points);
+//     polyData->SetVerts(vertices);
+//     polyData->GetPointData()->SetScalars(colors);
+
+//     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+//     mapper->SetInputData(polyData);
+
+//     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+//     actor->SetMapper(mapper);
+
+//     vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+//     vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+//     renderWindow->SetSize(imgWidth, imgHeight);
+//     renderWindow->AddRenderer(renderer);
+
+//     vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+//     interactor->SetRenderWindow(renderWindow);
+
+//     renderer->AddActor(actor);
+//     renderer->SetBackground(1, 1, 1); // Set background color to white
+
+//     renderWindow->Render();
+//     interactor->Start();
 // }
+
+// Function to render the colored voxel object using VTK
+void renderColoredVoxels(std::vector<voxel> &voxels)
+{
+    vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
+
+    // Create VTK objects
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkUnsignedCharArray> colorsArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
+    colorsArray->SetNumberOfComponents(3);
+    vtkSmartPointer<vtkCellArray> voxelsCells = vtkSmartPointer<vtkCellArray>::New();
+    vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+
+    // Populate points and colors arrays
+    for (auto &voxel : voxels)
+    {
+        points->InsertNextPoint(voxel.xpos, voxel.ypos, voxel.zpos);
+        unsigned char color[3] = {static_cast<unsigned char>(voxel.red),
+                                  static_cast<unsigned char>(voxel.green),
+                                  static_cast<unsigned char>(voxel.blue)};
+        colorsArray->InsertNextTypedTuple(color);
+    }
+
+    // Populate voxel cells
+    for (vtkIdType i = 0; i < voxels.size(); ++i)
+    {
+        vtkIdType voxelIndices[1] = {i};
+        voxelsCells->InsertNextCell(1, voxelIndices);
+    }
+
+    // Connect the points and colors to the polyData
+    polyData->SetPoints(points);
+    polyData->GetPointData()->SetScalars(colorsArray);
+    polyData->SetVerts(voxelsCells);
+
+    // Create a mapper
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputData(polyData);
+
+    // Create an actor
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    // Create a renderer and add the actor
+    vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+    renderer->AddActor(actor);
+    renderer->SetBackground(colors->GetColor3d("White").GetData());
+
+    // Create a render window
+    vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+    renderWindow->AddRenderer(renderer);
+
+    // Create an interactor
+    vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    interactor->SetRenderWindow(renderWindow);
+
+    // Start the visualization
+    renderWindow->Render();
+    interactor->Start();
+}

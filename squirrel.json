@@ -3,6 +3,7 @@
 	"matrices_path": "../assets/squirrel/viff.xml",
 	"image_folder": "../assets/squirrel/original_images/",
 	"silhouette_folder": "../assets/squirrel/segmented_images/",
+	"skip_frames" : [0, 10, 20],
 	"use_masks": true,
 	"fx": 1680.2631413061415,
 	"fy": 1676.1202869984309,

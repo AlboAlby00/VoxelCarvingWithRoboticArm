@@ -49,6 +49,17 @@
 #include <numeric> // std::iota
 // #include <boost/filesystem.hpp>
 
+#include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+#include <vtkPoints.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkPointData.h>
+#include <vtkDataSetMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+
 const int IMG_WIDTH = 1280;
 const int IMG_HEIGHT = 720;
 const int VOXEL_DIM = 128;
