@@ -68,57 +68,6 @@ void colourVoxels(std::vector<camera> &cameras, std::vector<voxel> &voxels)
     }
 }
 
-// void renderColoredVoxels(const std::vector<voxel> &voxelGrid, const startParams &params)
-// {
-//     int imgWidth = IMG_WIDTH;
-//     int imgHeight = IMG_HEIGHT;
-
-//     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-//     vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
-//     vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-
-//     colors->SetNumberOfComponents(3);
-
-//     for (const voxel &v : voxelGrid)
-//     {
-//         if (v.red >= 0)
-//         {
-//             points->InsertNextPoint(v.xpos, v.ypos, v.zpos);
-//             vertices->InsertNextCell(1);
-//             vertices->InsertCellPoint(points->GetNumberOfPoints() - 1);
-
-//             colors->InsertNextTuple3(static_cast<unsigned char>(v.red * 255),
-//                                      static_cast<unsigned char>(v.green * 255),
-//                                      static_cast<unsigned char>(v.blue * 255));
-//         }
-//     }
-
-//     vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
-//     polyData->SetPoints(points);
-//     polyData->SetVerts(vertices);
-//     polyData->GetPointData()->SetScalars(colors);
-
-//     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-//     mapper->SetInputData(polyData);
-
-//     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-//     actor->SetMapper(mapper);
-
-//     vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-//     vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-//     renderWindow->SetSize(imgWidth, imgHeight);
-//     renderWindow->AddRenderer(renderer);
-
-//     vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-//     interactor->SetRenderWindow(renderWindow);
-
-//     renderer->AddActor(actor);
-//     renderer->SetBackground(1, 1, 1); // Set background color to white
-
-//     renderWindow->Render();
-//     interactor->Start();
-// }
-
 // Function to render the colored voxel object using VTK
 void renderColoredVoxels(std::vector<voxel> &voxels)
 {
