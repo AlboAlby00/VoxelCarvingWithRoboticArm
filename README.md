@@ -76,7 +76,7 @@ Once you have installed the required libraries, you can compile and run the code
 
 mkdir build && cd build
 
-cmake ..
+cmake -DCOMPILE_ARUCO=OFF ..
 
 make -j$(nproc)
 
