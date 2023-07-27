@@ -224,12 +224,12 @@ int main(int argc, char *argv[])
     std::cout << "Voxel Carving Complete \n";
 
     /** TODO: Voxel Colouring **/
-    std::cout << "Colouring Voxel Grid...\n";
-    colourVoxels(cameras, VOXELS);
-    std::cout << "Colouring completed \n";
+    // std::cout << "Colouring Voxel Grid...\n";
+    // colourVoxels(cameras, VOXELS);
+    // std::cout << "Colouring completed \n";
 
     /** VTK **/
-    renderColoredVoxels(VOXELS);
+    // renderColoredVoxels(VOXELS);
     // renderColoredVoxels(VOXELS, params);
     /*****/
 

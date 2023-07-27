@@ -1,31 +1,32 @@
 {
-  "configurations": [
-    {
-      "browse": {
-        "databaseFilename": "${default}",
-        "limitSymbolsToIncludedHeaders": false
-      },
-      "includePath": [
-        "/home/alboalby00/catkin_ws/devel/include/**",
-        "/opt/ros/noetic/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros/franka_control/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros/franka_example_controllers/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros/franka_gazebo/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros/franka_gripper/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros/franka_hw/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros_interface/franka_skill/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros_interface/franka_utils/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_red/red_robot_utils/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_red/robot_controllers/include/**",
-        "/home/alboalby00/catkin_ws/src/franka_ros_interface/trajectory_ros_interface/include/**",
-        "/usr/include/**"
-      ],
-      "name": "ROS",
-      "intelliSenseMode": "gcc-x64",
-      "compilerPath": "/usr/bin/gcc",
-      "cStandard": "gnu11",
-      "cppStandard": "c++14"
-    }
-  ],
-  "version": 4
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "${default}",
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "includePath": [
+                "/home/alboalby00/catkin_ws/devel/include/**",
+                "/opt/ros/noetic/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros/franka_control/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros/franka_example_controllers/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros/franka_gazebo/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros/franka_gripper/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros/franka_hw/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros_interface/franka_skill/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros_interface/franka_utils/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_red/red_robot_utils/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_red/robot_controllers/include/**",
+                "/home/alboalby00/catkin_ws/src/franka_ros_interface/trajectory_ros_interface/include/**",
+                "/usr/include/**"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu11",
+            "cppStandard": "c++14",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
 }

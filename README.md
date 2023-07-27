@@ -80,6 +80,6 @@ cmake -DCOMPILE_ARUCO=OFF ..
 
 make -j$(nproc)
 
-./VoxelCarving <path/to/config>
+./VoxelCarving more_blocks.json
 
 ```
