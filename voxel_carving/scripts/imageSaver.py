@@ -9,6 +9,7 @@ from PIL import Image
 from base64 import decodestring
 from scipy.spatial.transform import Rotation as R
 from utils.markerDetector import detect_markers, calculate_camera_pose
+from utils.voxelsegmentation import segmentation
 from cv_bridge import CvBridge
 
 class ImageSaver:
@@ -118,7 +119,7 @@ class ImageSaver:
         _, markerCorners, markerIds = detect_markers(image.copy())
         _, cameraPose, worldPoints = calculate_camera_pose(markerCorners,markerIds, image.copy())
         
-        segmented_image = image #TODO
+        #segmented_image = segmentation(image, cameraPose, )
         
         response = ArucoImageResponse()
         response.image = np.array(image).tobytes()

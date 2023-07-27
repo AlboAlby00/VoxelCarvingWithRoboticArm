@@ -93,19 +93,16 @@ if __name__ == "__main__":
    
     images = []
     cameraPoses = []
-    """
-    image_path = os.path.dirname(__file__)+"/../../ar_images/test1.jpg"
-    image = cv2.imread(image_path)
-    image =  cv2.resize(image, (1280, 720))
-    """
-    for index in range(8):
-        image_path = os.path.dirname(__file__)+f"/../../../ar_images/ar_3/image_{index+1}.jpeg"
-        image = cv2.imread(image_path) 
-        images.append(image)
+
+    for index in range(50):
+        if True:
+            image_path = os.path.dirname(__file__)+f"/../../../ar_images/red_block/image_{index+1}"
+            image = cv2.imread(image_path) 
+            images.append(image)
         #cv2.imshow("debug", image)
         #cv2.waitKey()
     
-    file_path = os.path.dirname(__file__)+f"/../../../ar_images/ar_3/poses.txt"
+    file_path = os.path.dirname(__file__)+f"/../../../ar_images/red_block/poses_2.txt"
     for image in images:
         modified_image = image.copy()
         modified_image, markerCorners, markerIds = detect_markers(modified_image)

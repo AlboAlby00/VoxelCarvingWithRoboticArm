@@ -21,7 +21,7 @@ class CameraPoseShower:
         self.tx = 0.0
         self.ty = 0.0
         self.tz = 0.0
-
+        """
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('voxel_carving')+"/../data/speriamo.txt"
         with open(file_path, mode='r') as file:
@@ -31,6 +31,7 @@ class CameraPoseShower:
                 pose = np.array(list)
                 pose = np.reshape(pose, (4,4))
                 self.poses.append(pose)
+        """
 
     def get_camera_geometry(self,pose):
         # Compute the camera frustum points in camera coordinate system
@@ -78,7 +79,7 @@ class CameraPoseShower:
         view_control.set_front([-1.0, -1.0, -1.0])
 
         for point in points:                       
-            coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=point)
+            coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=6, origin=point)
             visualizer.add_geometry(coordinate_frame)
 
             # Set the view control (optional)
@@ -94,7 +95,7 @@ class CameraPoseShower:
     def display_world_frame(self):
 
                 # Create a coordinate frame
-        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.3, origin=[0, 0, 0])
 
         # Create a visualization window
         vis = o3d.visualization.Visualizer()
@@ -164,4 +165,3 @@ class CameraPoseShower:
 if __name__ == "__main__":
     c = CameraPoseShower()
     c.display_poses()
-    c.display_world_frame()
