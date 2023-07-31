@@ -6,7 +6,7 @@ void carve(float fArray[], startParams params, camera cam, std::vector<voxel> &v
     cv::Canny(cam.Silhouette, silhouette, 0, 255);
     cv::bitwise_not(silhouette, silhouette);
     // cv::imshow("hello", silhouette);
-    cv::waitKey();
+    // cv::waitKey();
     cv::distanceTransform(silhouette, distImage, cv::DIST_L2, 3);
 
     // cv::Mat projectedImage;           // Create an image to store the projected voxel
