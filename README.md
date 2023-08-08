@@ -77,10 +77,11 @@ Once you have installed the required libraries, you can compile and run the code
 mkdir build && cd build
 
 cmake -DCOMPILE_ARUCO=OFF ..
-### References
-- [1]  Voxel-carving.  https://github.com/xocoatzin/Voxel-Carving, 2013.
+
 make -j$(nproc)
 
 ./VoxelCarving ../red_block.json
 
 ```
+### References
+- [1]  Voxel-carving.  https://github.com/xocoatzin/Voxel-Carving, 2013.
